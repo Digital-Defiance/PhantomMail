@@ -1,7 +1,6 @@
 using System;
 using System.IO.Compression;
 using System.Linq;
-using System.Numerics;
 using System.Runtime.InteropServices;
 using System.Security;
 using System.Text.Json;
@@ -11,7 +10,6 @@ using PhantomKit.Helpers;
 using PhantomKit.Models;
 using Terminal.Gui;
 using Attribute = Terminal.Gui.Attribute;
-using Color = System.Drawing.Color;
 
 namespace PhantomKit.Test;
 
@@ -283,36 +281,6 @@ public class UtilitiesTests
     }
 
     [TestMethod]
-    [Ignore]
-    public void TestColorMapper()
-    {
-        foreach (var (_, value) in ColorHelper.ColorNames)
-        {
-            var systemColor = Color.FromArgb(
-                red: value.r,
-                green: value.g,
-                blue: value.b);
-
-            var spectreColor = new Spectre.Console.Color(red: systemColor.R,
-                green: systemColor.G,
-                blue: systemColor.B);
-
-            var colorName = Helpers.Spectre.GetColorName(color: spectreColor);
-
-            var colorVector = new Vector3(x: value.r,
-                y: value.g,
-                z: value.b);
-
-            var nearestColor = ColorHelper.GetClosestColorReference(vect: colorVector);
-
-            Console.WriteLine(value: $" - spectre color name: {colorName}\n" +
-                                     $"     system color name: {systemColor.Name}\n" +
-                                     $"     r: {value.r}, g: {value.g}, b: {value.b}\n" +
-                                     $"     closest reference: {(nearestColor is null ? "<null>" : nearestColor.Name)}");
-        }
-    }
-
-    [TestMethod]
     public void TestSerializeColorScheme()
     {
         Application.Driver = new FakeDriver();
@@ -320,8 +288,8 @@ public class UtilitiesTests
         // default schema is all zeroes
         var colorScheme = new ColorScheme();
 
-        var attr = Attribute.Make(foreground: Terminal.Gui.Color.Blue,
-            background: Terminal.Gui.Color.Magenta);
+        var attr = Attribute.Make(foreground: Color.Blue,
+            background: Color.Magenta);
 
         colorScheme.Focus = attr;
 
@@ -337,8 +305,8 @@ public class UtilitiesTests
             actual: deserializedBase);
 
         // now change the color and compare it again
-        attr = Attribute.Make(foreground: Terminal.Gui.Color.BrightCyan,
-            background: Terminal.Gui.Color.White);
+        attr = Attribute.Make(foreground: Color.BrightCyan,
+            background: Color.White);
 
         colorScheme.HotNormal = attr;
 

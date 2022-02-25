@@ -9,12 +9,10 @@
 
     <ItemGroup>
         <PackageReference Include="MailKit" Version="3.1.1"/>
+        <PackageReference Include="Microsoft.Extensions.DependencyInjection.Abstractions" Version="6.0.0"/>
+        <PackageReference Include="Microsoft.Extensions.Hosting" Version="6.0.1"/>
         <PackageReference Include="SemanticVersioning" Version="2.0.0"/>
-        <PackageReference Include="Spectre.Console" Version="0.43.0"/>
-        <PackageReference Include="Spectre.Console.Extensions.Progress" Version="0.3.0"/>
-        <PackageReference Include="Spectre.Console.Extensions.Table" Version="0.3.0"/>
         <PackageReference Include="Terminal.Gui" Version="1.4.0"/>
-        <PackageReference Include="Terminal.Gui.Forms" Version="0.1.0"/>
     </ItemGroup>
 
 </Project>

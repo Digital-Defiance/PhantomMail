@@ -506,17 +506,9 @@ public sealed record EncryptableSettingsVault : IDictionary<string, object>, IDi
     ///     Write the settings to the specified file.
     /// </summary>
     /// <param name="fileName"></param>
-    /// <param name="updateConsoleStatus"></param>
-    public void Save(string? fileName = null, bool updateConsoleStatus = true)
+    public void Save(string? fileName = null)
     {
-        fileName ??= Utilities.SettingsFile();
-        if (updateConsoleStatus)
-            Helpers.Spectre.PrintStatus(
-                message: string.Concat(str0: "Saving settings to ",
-                    str1: Helpers.Spectre.SpectreTag(tag: "cyan",
-                        content: fileName)),
-                colorWrapMessage: false);
-
+        fileName ??= Utilities.GetSettingsFile();
         var directory = Path.GetDirectoryName(path: fileName)!;
         if (!Directory.Exists(path: directory))
             Directory.CreateDirectory(path: directory);
@@ -532,12 +524,11 @@ public sealed record EncryptableSettingsVault : IDictionary<string, object>, IDi
 
     public static EncryptableSettingsVault Load(SecureString vaultKey, string? fileName = null)
     {
-        fileName ??= Utilities.SettingsFile();
+        fileName ??= Utilities.GetSettingsFile();
         if (!File.Exists(path: fileName))
             throw new FileNotFoundException(
                 message: string.Concat(str0: "Settings file ",
-                    str1: Helpers.Spectre.SpectreTag(tag: "cyan",
-                        content: fileName),
+                    str1: fileName,
                     str2: " not found."),
                 fileName: fileName);
 
@@ -552,7 +543,8 @@ public sealed record EncryptableSettingsVault : IDictionary<string, object>, IDi
                 failedKey: out var failedKey,
                 exception: out var thrownException))
             return settingsVault;
-        throw new InvalidSettingsException(
+
+        throw new VaultKeyIncorrectException(
             paramName: failedKey,
             innerException: thrownException);
     }

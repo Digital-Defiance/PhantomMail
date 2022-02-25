@@ -13,8 +13,8 @@ public record HumanEditableTheme(HumanEditableColorScheme TopLevel, HumanEditabl
     [JsonIgnore] public static readonly ImmutableDictionary<string, HumanEditableTheme> BuiltinThemes =
         new Dictionary<string, HumanEditableTheme>
         {
-            {nameof(Default), new DefaultHumanEditableTheme()},
-            {"Dark", new DarkHumanEditableTheme()},
+            {nameof(Default), Default},
+            {nameof(Dark), Dark},
         }.ToImmutableDictionary();
 
     public HumanEditableTheme() : this(
@@ -46,7 +46,9 @@ public record HumanEditableTheme(HumanEditableColorScheme TopLevel, HumanEditabl
     }
     // ReSharper restore InconsistentNaming
 
-    [JsonIgnore] public static HumanEditableTheme Default => BuiltinThemes[key: nameof(Default)];
+    [JsonIgnore] public static HumanEditableTheme Default => new DefaultHumanEditableTheme();
+    [JsonIgnore] public static HumanEditableTheme Dark => new DarkHumanEditableTheme();
+
     [JsonInclude] public HumanEditableColorScheme TopLevel { get; set; } = TopLevel;
 
     [JsonInclude] public HumanEditableColorScheme Base { get; set; } = Base;

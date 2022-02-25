@@ -9,6 +9,6 @@ namespace PhantomKit.Test;
 [Serializable]
 public class TestObject
 {
-    [JsonInclude] public string ValueA { get; set; } = string.Empty;
-    [JsonInclude] public int ValueB { get; set; }
+    [JsonInclude] public string ValueA { get; init; } = string.Empty;
+    [JsonInclude] public int ValueB { get; init; }
 }

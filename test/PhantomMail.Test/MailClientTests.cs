@@ -24,8 +24,7 @@ public class MailClientTests
         var vaultKey = NewVaultKey(plainPassword: out var plainPassword);
         var mailSettings = new EncryptableSettingsVault(vaultKey: vaultKey);
         var settingsTemporaryFile = Path.GetTempFileName();
-        mailSettings.Save(fileName: settingsTemporaryFile,
-            updateConsoleStatus: false);
+        mailSettings.Save(fileName: settingsTemporaryFile);
 
         var mailSettings2 = EncryptableSettingsVault.Load(vaultKey: vaultKey,
             fileName: settingsTemporaryFile);

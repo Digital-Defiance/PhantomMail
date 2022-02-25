@@ -11,7 +11,7 @@ public static class Utilities
         return type.AssemblyQualifiedName ?? type.FullName ?? type.Name;
     }
 
-    public static string SettingsFile(string? directoryName = null, string? fileName = null)
+    public static string GetSettingsFile(string? directoryName = null, string? fileName = null)
     {
         return directoryName is null
             ? Path.Combine(

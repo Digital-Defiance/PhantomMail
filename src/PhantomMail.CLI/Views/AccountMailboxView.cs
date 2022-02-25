@@ -1,8 +1,7 @@
-using PhantomKit.Helpers;
 using PhantomKit.Models;
 using Terminal.Gui;
 
-namespace PhantomKit.Views;
+namespace PhantomMail.Views;
 
 public class AccountMailboxView : View
 {
