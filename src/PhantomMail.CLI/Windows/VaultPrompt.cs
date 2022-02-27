@@ -92,8 +92,6 @@ public class VaultPrompt : View
         this._passwordDialogOkButton.Clicked += this.OnPasswordDialogOkClicked;
 
         this._passwordDialogCancelButton.Clicked += this.OnPasswordDialogCancelClicked;
-
-        this._passwordDialogOkButton.SetFocus();
     }
 
     public SecureString? VaultKeySecureString { get; private set; }

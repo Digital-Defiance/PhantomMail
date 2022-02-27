@@ -7,7 +7,7 @@ public class PhantomMailMainMenu : MenuBar
 {
     public PhantomMailMainMenu()
     {
-        GuiCommand guiCommand = GuiCommand.Instance;
+        GuiCommand guiCommand = GuiCommand.Singleton;
         MenuItemDetails[] menuItems =
         {
             new(title: "F_ind",

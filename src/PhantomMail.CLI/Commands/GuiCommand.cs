@@ -4,7 +4,6 @@ using System.Security;
 using MailKit;
 using McMaster.Extensions.CommandLineUtils;
 using Microsoft.Extensions.Configuration;
-using Microsoft.Extensions.Logging;
 using NStack;
 using PhantomKit.Exceptions;
 using PhantomKit.Helpers;
@@ -28,7 +27,7 @@ public class GuiCommand
     private readonly Dictionary<Guid, IMailService> _connectedAccounts = new();
     private readonly IConsole _console;
     private readonly bool _isBox10X = true;
-    private readonly ILogger _logger;
+    private readonly Serilog.ILogger _logger;
     private readonly ScrollView _scrollView;
     private readonly VaultPrompt _vaultPrompt;
     private readonly Window _window;
@@ -41,7 +40,7 @@ public class GuiCommand
     public Label Ml;
     public Label Ml2;
 
-    public GuiCommand(ILogger logger, IConfiguration configuration, IConsole console)
+    public GuiCommand(Serilog.ILogger logger, IConfiguration configuration, IConsole console)
     {
         if (_singleton != null)
             throw new InvalidOperationException(message: "Only one instance of GuiCommand can be created");
@@ -54,6 +53,8 @@ public class GuiCommand
             height: 40,
             width: 400,
             border: new Border {BorderThickness = new Thickness {Top = 1, Bottom = 1, Left = 1, Right = 1}});
+
+        Application.Init();
 
         /*
         // keep a reference to the settings vault
@@ -109,7 +110,7 @@ public class GuiCommand
             new PhantomMailStatusBar(guiCommand: this));
     }
 
-    public static GuiCommand Instance
+    public static GuiCommand Singleton
         => _singleton ?? throw new InvalidOperationException(message: "GuiCommand has not been initialized");
 
 
@@ -204,9 +205,10 @@ win.Add(view: text);
     protected void OnException(Exception ex)
     {
         this.OutputError(message: ex.Message);
-        this._logger.LogError(message: ex.Message);
-        this._logger.LogDebug(exception: ex,
-            message: ex.Message);
+        // ReSharper disable StructuredMessageTemplateProblem
+        this._logger.Error(exception: ex, messageTemplate: "[{Timestamp:HH:mm:ss} {Level:u3}] {Message:lj}{NewLine}{Exception}");
+        this._logger.Debug(exception: ex, messageTemplate: "[{Timestamp:HH:mm:ss} {Level:u3}] {Message:lj}{NewLine}{Exception}");
+        // ReSharper restore StructuredMessageTemplateProblem
     }
 
     protected void OutputToConsole(string data)
@@ -227,7 +229,7 @@ win.Add(view: text);
 
     public static void Win_KeyPress(View.KeyEventEventArgs e)
     {
-        var guiCommand = Instance;
+        var guiCommand = Singleton;
         switch (ShortcutHelper.GetModifiersKey(kb: e.KeyEvent))
         {
             case Key.CtrlMask | Key.T:
@@ -299,12 +301,12 @@ win.Add(view: text);
 
     public static void MenuKeysStyle_Toggled(bool e)
     {
-        Instance.Menu.UseKeysUpDownAsKeysLeftRight = Instance.MenuKeysStyle.Checked;
+        Singleton.Menu.UseKeysUpDownAsKeysLeftRight = Singleton.MenuKeysStyle.Checked;
     }
 
     public static void MenuAutoMouseNav_Toggled(bool e)
     {
-        Instance.Menu.WantMousePositionReports = Instance.MenuAutoMouseNav.Checked;
+        Singleton.Menu.WantMousePositionReports = Singleton.MenuAutoMouseNav.Checked;
     }
 
     public static bool Quit()
@@ -379,7 +381,7 @@ win.Add(view: text);
         Colors.Error = theme.Error.ToColorScheme();
         Colors.Dialog = theme.Dialog.ToColorScheme();
         if (updateExisting)
-            (instance ?? Instance).UpdateTheme(theme: theme);
+            (instance ?? Singleton).UpdateTheme(theme: theme);
     }
 
     private void AddScrollViewChild()

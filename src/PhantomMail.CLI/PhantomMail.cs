@@ -1,4 +1,5 @@
 ﻿using System.Text;
+using McMaster.Extensions.CommandLineUtils;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
@@ -7,6 +8,7 @@ using PhantomMail.Menus;
 using Serilog;
 using Serilog.Extensions.Logging;
 using Terminal.Gui;
+using ILogger = Microsoft.Extensions.Logging.ILogger;
 
 namespace PhantomMail;
 
@@ -36,10 +38,11 @@ public static class PhantomMail
             .AddEnvironmentVariables()
             .Build();
 
-        Log.Logger = new LoggerConfiguration()
+        var logger = new LoggerConfiguration()
             .ReadFrom.Configuration(configuration: Configuration)
             .Enrich.FromLogContext()
             .CreateLogger();
+        Log.Logger = logger;
 
         var hostBuilder = Host.CreateDefaultBuilder(args: args)
             .ConfigureServices(configureDelegate: (hostContext, services) =>
@@ -54,13 +57,22 @@ public static class PhantomMail
                     if (!string.IsNullOrEmpty(value: minimumLevel))
                         config.SetMinimumLevel(level: Enum.Parse<LogLevel>(value: minimumLevel));
                 });
+                services.AddSingleton<Serilog.ILogger>(Log.Logger);
+                services.AddSingleton<IConsole>(PhysicalConsole.Singleton);
+                /*services.AddSingleton<GuiCommand>(new GuiCommand(
+                    logger: Log.Logger,
+                    configuration: Configuration,
+                    console: PhysicalConsole.Singleton));*/
             })
             .UseConsoleLifetime();
 
         var cancellationTokenSource = new CancellationTokenSource();
         var cancellationToken = cancellationTokenSource.Token;
-        using var host = hostBuilder.UseCommandLineApplication<GuiCommand>(args).Build();
-        var result = await host.RunCommandLineApplicationAsync(cancellationToken);
+        using var host = hostBuilder
+            .UseCommandLineApplication<GuiCommand>(args)
+            .Build();
+        var result = await host
+            .RunCommandLineApplicationAsync(cancellationToken);
         await host.WaitForShutdownAsync(token: cancellationToken);
         return result;
     }
