@@ -1,8 +1,5 @@
 using System.Security;
 using NStack;
-using PhantomKit.Exceptions;
-using PhantomKit.Helpers;
-using PhantomKit.Models;
 using Terminal.Gui;
 
 namespace PhantomMail.Windows;
@@ -32,16 +29,6 @@ namespace PhantomMail.Windows;
 /// </example>
 public class VaultPrompt : View
 {
-    public enum ResolutionType
-    {
-        Cancelled,
-        OkFileDoesNotExist,
-        OkInvalid,
-        OkFileExists,
-        OkPasswordIncorrect,
-        OkPasswordCorrect,
-    }
-
     private const int DefaultWidth = 50;
     private const int MesssageBoxHeight = 5; // (top + top padding + password row + buttons + bottom)
 
@@ -49,7 +36,6 @@ public class VaultPrompt : View
     private readonly Dialog _passwordDialog;
     private readonly Button _passwordDialogCancelButton;
     private readonly Button _passwordDialogOkButton;
-    private readonly FileDialog _vaultFileDialog;
     private readonly TextField _vaultPassword;
 
     public VaultPrompt(int width, int height, Border? border = null)
@@ -58,15 +44,6 @@ public class VaultPrompt : View
         this._passwordDialogCancelButton = new Button(text: ustring.Make(str: "Cancel"),
             is_default: true);
         this._buttons = new[] {this._passwordDialogOkButton, this._passwordDialogCancelButton};
-
-        this._vaultFileDialog = new FileDialog(
-            title: "Select vault",
-            prompt: "Open",
-            nameFieldLabel: "File",
-            message: "Select a vault json file to open");
-        this._vaultFileDialog.AllowedFileTypes = new[] {".json"};
-        this._vaultFileDialog.DirectoryPath = Path.GetDirectoryName(path: this.SettingsFile);
-        this._vaultFileDialog.FilePath = Path.GetFileName(path: this.SettingsFile);
 
         // Create button array for Dialog;
         var buttonWidth = this._passwordDialogOkButton.Bounds.Width + this._passwordDialogCancelButton.Bounds.Width + 1;
@@ -119,18 +96,12 @@ public class VaultPrompt : View
         this._passwordDialogOkButton.SetFocus();
     }
 
-    public bool? VaultFileExists { get; private set; }
-    public bool? VaultPasswordCorrect { get; private set; }
-
-    public string SettingsFile { get; private set; } = Utilities.GetSettingsFile();
     public SecureString? VaultKeySecureString { get; private set; }
-    public ResolutionType? Resolution { get; private set; }
-
-    public EncryptableSettingsVault? Vault { get; private set; }
 
     public void OnPasswordDialogOkClicked()
     {
         var insecurePassword = this._vaultPassword.Text.ToString()!;
+        this._vaultPassword.Text = ustring.Make(str: string.Empty);
         var result = new SecureString();
         foreach (var c in insecurePassword) result.AppendChar(c: c);
         result.MakeReadOnly();
@@ -140,80 +111,25 @@ public class VaultPrompt : View
 
     public void OnPasswordDialogCancelClicked()
     {
+        this._vaultPassword.Text = ustring.Make(str: string.Empty);
         this.VaultKeySecureString = null;
-        this.Resolution = ResolutionType.Cancelled;
         Application.RequestStop();
     }
 
-    public async Task<bool> Run(Func<Exception, bool>? errorHandler = null)
+    public async Task<bool> Run(Toplevel top, Func<Exception, bool>? errorHandler = null)
     {
         return await Task.Run(function: () =>
         {
-            // run the vault file selection dialog
-            Application.Run(view: this._vaultFileDialog,
-                errorHandler: errorHandler);
-
-            switch (this._vaultFileDialog.Canceled)
-            {
-                case false when !string.IsNullOrWhiteSpace(value: this._vaultFileDialog.FilePath?.ToString()):
-                {
-                    this.SettingsFile = this._vaultFileDialog.FilePath.ToString()!;
-                    this.VaultFileExists = File.Exists(path: this.SettingsFile);
-
-                    break;
-                }
-                case false:
-                    this.Resolution = ResolutionType.OkInvalid;
-                    return false;
-                case true:
-                    this.Resolution = ResolutionType.Cancelled;
-                    return false;
-            }
-
-            if (this.VaultFileExists is null || !this.VaultFileExists.Value)
-
-            {
-                this.Resolution = ResolutionType.OkFileDoesNotExist;
-                return false;
-            }
-
             // now run the password dialog
-            Application.Run(view: this._passwordDialog);
+            Application.Run(view: top);
 
-            if (this._vaultFileDialog.Canceled || this.VaultKeySecureString is null)
-            {
-                this.Resolution = ResolutionType.Cancelled;
-                return false;
-            }
+            if (this.VaultKeySecureString is null) return false;
 
             if (this.VaultKeySecureString is { } secureString &&
-                (secureString.IsReadOnly() is false || secureString.Length == 0) ||
-                this.VaultKeySecureString is { } && !this.VaultFileExists.Value)
-            {
-                this.Resolution = ResolutionType.OkInvalid;
+                (secureString.IsReadOnly() is false || secureString.Length == 0))
                 return false;
-            }
 
-            try
-            {
-                this.Vault = EncryptableSettingsVault.Load(
-                    vaultKey: this.VaultKeySecureString!,
-                    fileName: this.SettingsFile);
-                this.VaultPasswordCorrect = true;
-                this.Resolution = ResolutionType.OkPasswordCorrect;
-                return true;
-            }
-            catch (VaultKeyIncorrectException vaultKeyIncorrectException)
-            {
-                this.Resolution = ResolutionType.OkPasswordIncorrect;
-                this.VaultPasswordCorrect = false;
-                return false;
-            }
-            catch (Exception e)
-            {
-                this.Resolution = ResolutionType.OkInvalid;
-                return false;
-            }
+            return true;
         });
     }
 }

@@ -6,9 +6,8 @@ namespace PhantomMail.StatusBars;
 
 public class PhantomMailStatusBar : StatusBar
 {
-    public PhantomMailStatusBar(GuiContext guiContext)
+    public PhantomMailStatusBar(GuiCommand guiCommand)
     {
-        guiContext = guiContext;
         this.Items = new[]
         {
             new(shortcut: Key.F1,
@@ -21,36 +20,36 @@ public class PhantomMailStatusBar : StatusBar
                     "Ok")),
             new StatusItem(shortcut: Key.F2,
                 title: "~F2~ Load",
-                action: guiContext.LoadVault),
+                action: guiCommand.LoadVault),
             new StatusItem(shortcut: Key.F3,
                 title: "~F3~ Save",
-                action: guiContext.SaveVault),
+                action: guiCommand.SaveVault),
             new StatusItem(shortcut: Key.CtrlMask | Key.Q,
                 title: "~^Q~ Quit",
                 action: () =>
                 {
-                    if (GuiContext.Quit() && Application.Top is not null) Application.Top.Running = false;
+                    if (GuiCommand.Quit() && Application.Top is not null) Application.Top.Running = false;
                 }),
             new StatusItem(shortcut: Key.F10,
                 title: "~F10~ Light/Dark",
                 action: () =>
                 {
                     var themeName =
-                        guiContext.SettingsVault.EncryptableSettings[key: nameof(EncryptableSettingsVault.Theme)];
+                        guiCommand.SettingsVault.EncryptableSettings[key: nameof(EncryptableSettingsVault.Theme)];
                     if (themeName is string && themeName.Equals(obj: "Default"))
                     {
-                        GuiContext.SetTheme(theme: new DarkHumanEditableTheme(),
+                        GuiCommand.SetTheme(theme: new DarkHumanEditableTheme(),
                             updateExisting: true,
-                            instance: guiContext);
-                        guiContext.SettingsVault.EncryptableSettings[key: nameof(EncryptableSettingsVault.Theme)] =
+                            instance: guiCommand);
+                        guiCommand.SettingsVault.EncryptableSettings[key: nameof(EncryptableSettingsVault.Theme)] =
                             "Dark";
                     }
                     else
                     {
-                        GuiContext.SetTheme(theme: new DefaultHumanEditableTheme(),
+                        GuiCommand.SetTheme(theme: new DefaultHumanEditableTheme(),
                             updateExisting: true,
-                            instance: guiContext);
-                        guiContext.SettingsVault.EncryptableSettings[key: nameof(EncryptableSettingsVault.Theme)] =
+                            instance: guiCommand);
+                        guiCommand.SettingsVault.EncryptableSettings[key: nameof(EncryptableSettingsVault.Theme)] =
                             "Default";
                     }
                 }),

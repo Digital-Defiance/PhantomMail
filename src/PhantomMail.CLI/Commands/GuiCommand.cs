@@ -1,5 +1,11 @@
+using System.Diagnostics;
+using System.Globalization;
+using System.Security;
 using MailKit;
+using McMaster.Extensions.CommandLineUtils;
+using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
+using NStack;
 using PhantomKit.Exceptions;
 using PhantomKit.Helpers;
 using PhantomKit.Models;
@@ -11,32 +17,43 @@ using Terminal.Gui;
 
 namespace PhantomMail;
 
-/// <summary>
-///     Shared state, reusable code/functions for the main application.
-/// </summary>
-public sealed class GuiContext : IDisposable
+[HelpOption(template: "--help")]
+public class GuiCommand
 {
-    private static GuiContext? _singleton;
+    private static GuiCommand? _singleton;
+
+    private readonly IConfiguration _configuration;
+
+    // ---- PASTED
     private readonly Dictionary<Guid, IMailService> _connectedAccounts = new();
+    private readonly IConsole _console;
     private readonly bool _isBox10X = true;
+    private readonly ILogger _logger;
     private readonly ScrollView _scrollView;
     private readonly VaultPrompt _vaultPrompt;
     private readonly Window _window;
-    private ILogger _logger;
-    private IServiceProvider _serviceProvider;
+    private string? _settingsFile;
+
+    private EncryptableSettingsVault _vault;
     public MenuBar Menu;
     public CheckBox MenuAutoMouseNav;
     public CheckBox MenuKeysStyle;
     public Label Ml;
     public Label Ml2;
 
-    public GuiContext(IServiceProvider serviceProvider)
+    public GuiCommand(ILogger logger, IConfiguration configuration, IConsole console)
     {
-        if (_singleton != null) throw new InvalidOperationException(message: "GuiContext is a singleton");
+        if (_singleton != null)
+            throw new InvalidOperationException(message: "Only one instance of GuiCommand can be created");
 
         _singleton = this;
-        this._serviceProvider = serviceProvider;
-        this._logger = (ILogger) serviceProvider.GetService(serviceType: typeof(ILogger))!;
+        this._logger = logger;
+        this._configuration = configuration;
+        this._console = console;
+        this._vaultPrompt = new VaultPrompt(
+            height: 40,
+            width: 400,
+            border: new Border {BorderThickness = new Thickness {Top = 1, Bottom = 1, Left = 1, Right = 1}});
 
         /*
         // keep a reference to the settings vault
@@ -53,13 +70,6 @@ public sealed class GuiContext : IDisposable
         this._window = new PhantomMailWindow();
         this.Menu = new PhantomMailMainMenu();
 
-        this._vaultPrompt = new VaultPrompt(height: 40,
-            width: 200,
-            border: new Border
-            {
-                BorderThickness = new Thickness {Left = 1, Right = 1, Top = 1, Bottom = 1},
-            });
-        ;
         this._scrollView = new ScrollView(frame: new Rect(x: 50,
             y: 10,
             width: 20,
@@ -96,13 +106,33 @@ public sealed class GuiContext : IDisposable
 
         Application.Top.Add(this._window,
             this.Menu,
-            new PhantomMailStatusBar(guiContext: this));
+            new PhantomMailStatusBar(guiCommand: this));
     }
 
-    public static GuiContext Instance
-        => _singleton ?? throw new InvalidOperationException(message: "GuiContext not constructed");
+    public static GuiCommand Instance
+        => _singleton ?? throw new InvalidOperationException(message: "GuiCommand has not been initialized");
 
-    public EncryptableSettingsVault SettingsVault => this._vaultPrompt.Vault ?? throw new VaultNotLoadedException();
+
+    [Option(optionType: CommandOptionType.SingleValue,
+        ShortName = "v",
+        LongName = "vault",
+        Description = "vault file",
+        ValueName = "vault file",
+        ShowInHelpText = true)]
+    public string VaultFile { get; set; } = Utilities.GetSettingsFile();
+
+    public string? SettingsFile
+    {
+        get => this._settingsFile;
+        set
+        {
+            if (this._vault is not null) throw new VaultAlreadyLoadedException();
+
+            this._settingsFile = value;
+        }
+    }
+
+    public EncryptableSettingsVault SettingsVault => this._vault ?? throw new VaultNotLoadedException();
 
     public EncryptableSettingsVault SettingsVaultCopy => new(other: this.SettingsVault);
 
@@ -114,6 +144,145 @@ public sealed class GuiContext : IDisposable
     private IEnumerable<EncryptedMailAccount> MailAccounts => this.SettingsVault is not null
         ? this.SettingsVault.MailAccounts(vaultKey: this.SettingsVault.VaultKey)
         : throw new VaultNotLoadedException();
+
+    protected virtual async Task<int> OnExecute(CommandLineApplication app)
+    {
+        if (Debugger.IsAttached)
+            CultureInfo.DefaultThreadCurrentUICulture = CultureInfo.GetCultureInfo(name: "en-US");
+
+        Application.Init();
+        Application.HeightAsBuffer = true;
+
+        var newTop = Application.Top;
+        newTop.Clear();
+        this.Menu = new PhantomMailMainMenu();
+        newTop.Add(view: this.Menu);
+
+        var win = new PhantomMailWindow();
+        var vaultFileDialog = new FileDialog(
+            title: "Select vault",
+            prompt: "Open",
+            nameFieldLabel: "File",
+            message: "Select a vault json file to open",
+            allowedTypes: new List<string> {".json"});
+        vaultFileDialog.DirectoryPath = ustring.Make(str: Path.GetDirectoryName(path: Utilities.GetSettingsFile()));
+        vaultFileDialog.FilePath = ustring.Make(str: Path.GetFileName(path: Utilities.GetSettingsFile()));
+
+        newTop.Add(view: vaultFileDialog);
+        // run the vault file selection dialog
+        Application.Run(view: newTop);
+
+        newTop.Remove(view: vaultFileDialog);
+
+        var vaultFile = vaultFileDialog.FilePath;
+        if (vaultFileDialog.Canceled || vaultFile is null || vaultFile.IsEmpty) return -1;
+
+        var newFile = !File.Exists(path: vaultFile.ToString());
+        if (!newFile)
+            // TODO: prompt to create
+            throw new NotImplementedException();
+
+        win.KeyPress += Win_KeyPress;
+        newTop.Add(view: new PhantomMailStatusBar(guiCommand: this));
+        await this.ShowVaultPrompt(newTop: newTop);
+        newTop.Add(view: win);
+
+        /*
+var text = new TextView
+{
+    X = 0, Y = 0, Width = Dim.Fill(),
+    Height = Dim.Fill() - 2, // -2 for the menu bar & status bar?
+};
+text.Text = "TODO: emails and such";
+win.Add(view: text);
+*/
+
+        Application.Run(view: newTop);
+        return 0;
+    }
+
+    protected void OnException(Exception ex)
+    {
+        this.OutputError(message: ex.Message);
+        this._logger.LogError(message: ex.Message);
+        this._logger.LogDebug(exception: ex,
+            message: ex.Message);
+    }
+
+    protected void OutputToConsole(string data)
+    {
+        this._console.BackgroundColor = ConsoleColor.Black;
+        this._console.ForegroundColor = ConsoleColor.White;
+        this._console.Out.Write(value: data);
+        this._console.ResetColor();
+    }
+
+    protected void OutputError(string message)
+    {
+        this._console.BackgroundColor = ConsoleColor.Red;
+        this._console.ForegroundColor = ConsoleColor.White;
+        this._console.Error.WriteLine(value: message);
+        this._console.ResetColor();
+    }
+
+    public static void Win_KeyPress(View.KeyEventEventArgs e)
+    {
+        var guiCommand = Instance;
+        switch (ShortcutHelper.GetModifiersKey(kb: e.KeyEvent))
+        {
+            case Key.CtrlMask | Key.T:
+                if (guiCommand.Menu.IsMenuOpen)
+                    guiCommand.Menu.CloseMenu();
+                else
+                    guiCommand.Menu.OpenMenu();
+                e.Handled = true;
+                break;
+        }
+    }
+
+    public void LoadVault(SecureString vaultKey, bool replaceLoadedVault)
+    {
+        if (!replaceLoadedVault && this._vault is not null)
+            throw new VaultAlreadyLoadedException();
+
+        if (this._settingsFile is null || string.IsNullOrEmpty(value: this._settingsFile))
+            throw new InvalidOperationException(message: "Settings file not set");
+
+        if (!File.Exists(path: this._settingsFile))
+            throw new FileNotFoundException(message: "Settings file not found",
+                fileName: this._settingsFile);
+
+        this._vault = EncryptableSettingsVault.Load(vaultKey: vaultKey,
+            fileName: this._settingsFile);
+    }
+
+    public void CreateVault(SecureString vaultKey, bool replaceLoadedVault, bool overwriteExisting)
+    {
+        if (!replaceLoadedVault && this._vault is not null)
+            throw new VaultAlreadyLoadedException();
+
+        if (this._settingsFile is null || string.IsNullOrEmpty(value: this._settingsFile))
+            throw new InvalidOperationException(message: "Settings file not set");
+
+        if (File.Exists(path: this._settingsFile) && !overwriteExisting)
+            throw new InvalidOperationException(
+                message: $"Settings file already exists and overwrite false: {this._settingsFile}");
+
+        this._vault = new EncryptableSettingsVault(vaultKey: vaultKey);
+        this._vault.Save(fileName: this._settingsFile);
+    }
+
+    public void CloseVault(bool saveIfChanged, bool cancelIfChanged = false)
+    {
+        if (this._vault is null)
+            throw new VaultNotLoadedException();
+
+        if (this._vault.HasChanged && !saveIfChanged && cancelIfChanged)
+            throw new VaultChangedException();
+
+        if (this._vault.HasChanged && saveIfChanged)
+            this._vault.Save();
+    }
 
     public void Dispose()
     {
@@ -201,7 +370,7 @@ public sealed class GuiContext : IDisposable
         // ReSharper enable ConditionIsAlwaysTrueOrFalse
     }
 
-    public static void SetTheme(HumanEditableTheme theme, bool updateExisting = false, GuiContext? instance = null)
+    public static void SetTheme(HumanEditableTheme theme, bool updateExisting = false, GuiCommand? instance = null)
     {
         // load color schemes into the Colors palette which is used to make new elements
         Colors.TopLevel = theme.TopLevel.ToColorScheme();
@@ -227,9 +396,12 @@ public sealed class GuiContext : IDisposable
         this._scrollView.ContentOffset = Point.Empty;
     }
 
-    public void ShowVaultPrompt()
+    public async Task<bool> ShowVaultPrompt(Toplevel newTop)
     {
-        this._window.Add(view: this._vaultPrompt);
+        newTop.Add(view: this._vaultPrompt);
+        var result = await this._vaultPrompt.Run(top: newTop);
+        newTop.Remove(view: this._vaultPrompt);
+        return result;
     }
 
     /*public static EncryptableSettingsVault AppLoadNewVault(string settingsFilePath, out SecureString vaultKey)
@@ -520,4 +692,38 @@ public sealed class GuiContext : IDisposable
     }
 
     #endregion
+
+    /*public void LostCode()
+    {
+        try
+        {
+            this.Vault = EncryptableSettingsVault.Load(
+                vaultKey: this.VaultKeySecureString!,
+                fileName: this.SettingsFile);
+            this.VaultPasswordCorrect = true;
+            this.Resolution = ResolutionType.OkPasswordCorrect;
+            return true;
+        }
+        catch (VaultKeyIncorrectException vaultKeyIncorrectException)
+        {
+            this.Resolution = ResolutionType.OkPasswordIncorrect;
+            this.VaultPasswordCorrect = false;
+            return false;
+        }
+        catch (Exception e)
+        {
+            this.Resolution = ResolutionType.OkInvalid;
+            return false;
+        }
+        
+        this._vaultPrompt = new VaultPrompt(
+            settingsFile: this._settingsFile,
+            height: 40,
+            width: 200,
+            border: new Border
+            {
+                BorderThickness = new Thickness {Left = 1, Right = 1, Top = 1, Bottom = 1},
+            });
+    }*/
+    // -- end paste --
 }

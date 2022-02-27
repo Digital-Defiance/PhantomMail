@@ -7,7 +7,7 @@ public class PhantomMailMainMenu : MenuBar
 {
     public PhantomMailMainMenu()
     {
-        GuiContext guiContext = GuiContext.Instance;
+        GuiCommand guiCommand = GuiCommand.Instance;
         MenuItemDetails[] menuItems =
         {
             new(title: "F_ind",
@@ -38,9 +38,9 @@ public class PhantomMailMainMenu : MenuBar
                         "",
                         () =>
                         {
-                            if (GuiContext.Quit())
+                            if (GuiCommand.Quit())
                             {
-                                PhantomMail.Running = null;
+                                //todo: GuiCommand.Running = null;
                                 Application.RequestStop();
                             }
                         },
@@ -53,19 +53,19 @@ public class PhantomMailMainMenu : MenuBar
                 {
                     new MenuItem("_Copy",
                         "",
-                        guiContext.Copy,
+                        guiCommand.Copy,
                         null,
                         null,
                         Key.C | Key.CtrlMask),
                     new MenuItem("C_ut",
                         "",
-                        guiContext.Cut,
+                        guiCommand.Cut,
                         null,
                         null,
                         Key.X | Key.CtrlMask),
                     new MenuItem("_Paste",
                         "",
-                        guiContext.Paste,
+                        guiCommand.Paste,
                         null,
                         null,
                         Key.Y | Key.CtrlMask),

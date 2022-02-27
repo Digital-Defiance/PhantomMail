@@ -5,8 +5,8 @@ namespace PhantomMail.Views;
 
 public class AccountMailboxView : View
 {
-    public static void View(in EncryptedMailAccount encryptedMailAccount, in GuiContext guiContext)
+    public static void View(in EncryptedMailAccount encryptedMailAccount, in GuiCommand guiCommand)
     {
-        var connection = guiContext.ConnectAccount(account: encryptedMailAccount);
+        var connection = guiCommand.ConnectAccount(account: encryptedMailAccount);
     }
 }
