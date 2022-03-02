@@ -1,14 +1,15 @@
 using System.Reflection;
-using PhantomKit.Models.Commands;
+using PhantomKit.Helpers;
+using PhantomKit.Interfaces;
 using Terminal.Gui;
 
 namespace PhantomMail.Menus;
 
 public class PhantomKitMainMenu : MenuBar
 {
-    public PhantomKitMainMenu()
+    public PhantomKitMainMenu(Type guiCommandType)
     {
-        GuiCommand guiCommand = GuiCommand.Singleton;
+        var guiCommand = IGuiCommand.GetInstance(guiCommandType);
         MenuItemDetails[] menuItems =
         {
             new(title: "F_ind",
@@ -37,14 +38,7 @@ public class PhantomKitMainMenu : MenuBar
                 {
                     new MenuItem("_Quit",
                         "",
-                        () =>
-                        {
-                            if (GuiCommand.Quit())
-                            {
-                                //todo: GuiCommand.Running = null;
-                                Application.RequestStop();
-                            }
-                        },
+                        GuiUtilities.QuitClick,
                         null,
                         null,
                         Key.AltMask | Key.Q),

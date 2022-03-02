@@ -282,10 +282,10 @@ public class UtilitiesTests
 
         var deserializedColorScheme = DataManipulation.Deserialize<HumanEditableColorScheme>(data: bytes);
         var deserializedBase = deserializedColorScheme.ToColorScheme();
-        Assert.IsTrue(colorScheme.Disabled.Equals(deserializedBase.Disabled));
-        Assert.IsTrue(colorScheme.Focus.Equals(deserializedBase.Focus));
-        Assert.IsTrue(colorScheme.Normal.Equals(deserializedBase.Normal));
-        Assert.IsTrue(colorScheme.HotNormal.Equals(deserializedBase.HotNormal));
+        Assert.IsTrue(condition: colorScheme.Disabled.Equals(obj: deserializedBase.Disabled));
+        Assert.IsTrue(condition: colorScheme.Focus.Equals(obj: deserializedBase.Focus));
+        Assert.IsTrue(condition: colorScheme.Normal.Equals(obj: deserializedBase.Normal));
+        Assert.IsTrue(condition: colorScheme.HotNormal.Equals(obj: deserializedBase.HotNormal));
 
         // now change the color and compare it again
         var attr = Attribute.Make(foreground: Color.BrightCyan,
@@ -293,9 +293,9 @@ public class UtilitiesTests
 
         colorScheme.HotNormal = attr;
 
-        Assert.IsTrue(colorScheme.Disabled.Equals(deserializedBase.Disabled));
-        Assert.IsTrue(colorScheme.Focus.Equals(deserializedBase.Focus));
-        Assert.IsTrue(colorScheme.Normal.Equals(deserializedBase.Normal));
-        Assert.IsFalse(colorScheme.HotNormal.Equals(deserializedBase.HotNormal));
+        Assert.IsTrue(condition: colorScheme.Disabled.Equals(obj: deserializedBase.Disabled));
+        Assert.IsTrue(condition: colorScheme.Focus.Equals(obj: deserializedBase.Focus));
+        Assert.IsTrue(condition: colorScheme.Normal.Equals(obj: deserializedBase.Normal));
+        Assert.IsFalse(condition: colorScheme.HotNormal.Equals(obj: deserializedBase.HotNormal));
     }
 }

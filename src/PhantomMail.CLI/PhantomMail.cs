@@ -5,6 +5,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using PhantomKit.Helpers;
+using PhantomKit.Models.Commands;
 using PhantomMail.CLI.Commands;
 using PhantomMail.Menus;
 using Serilog;
@@ -18,7 +19,6 @@ public static class PhantomMail
     public delegate MenuItem MenuItemDelegate(MenuItemDetails menuItem);
 
     public static IConfiguration? Configuration { get; private set; }
-
 
     private static async Task<int> Main(string[] args)
     {
@@ -65,18 +65,14 @@ public static class PhantomMail
         using var host = hostBuilder
             .UseCommandLineApplication<PhantomMailGuiCommand>(args: args)
             .Build();
+        // internal components require ability to get to the host services provider 
+        HostedGuiCommandBase.ServiceProvider = host.Services;
+        // execution begins here (and ends after the await has completed)
         var result = await host
             .RunCommandLineApplicationAsync(cancellationToken: cancellationToken);
-        try
-        {
-            await host.WaitForShutdownAsync(token: cancellationToken);
-        }
-        catch (ObjectDisposedException exception)
-        {
-            Log.Error(exception: exception,
-                messageTemplate: "Host was disposed");
-        }
+        // execution is completed
 
+        Console.WriteLine(value: "bye");
         return result;
     }
 }

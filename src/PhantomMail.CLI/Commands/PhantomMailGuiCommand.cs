@@ -1,17 +1,15 @@
-using System.Diagnostics;
-using System.Globalization;
 using System.Security;
 using MailKit;
 using McMaster.Extensions.CommandLineUtils;
 using Microsoft.Extensions.Configuration;
 using NStack;
 using PhantomKit.Exceptions;
+using PhantomKit.Extensions;
 using PhantomKit.Helpers;
 using PhantomKit.Interfaces;
 using PhantomKit.Models;
 using PhantomKit.Models.Commands;
 using PhantomKit.Models.Settings;
-using PhantomKit.Models.Themes;
 using PhantomMail.CLI.Dialogs;
 using PhantomMail.CLI.StatusBars;
 using PhantomMail.Menus;
@@ -22,25 +20,22 @@ using Terminal.Gui;
 namespace PhantomMail.CLI.Commands;
 
 [HelpOption(template: "--help")]
-public class PhantomMailGuiCommand : GuiCommand, IGuiCommand
+// ReSharper disable once ClassNeverInstantiated.Global
+// ReSharper is not smart enough to know this is being executed by PhantomMail.CLI lines 65-69 <see cref="PhantomMail.CLI:66"/>
+public class PhantomMailGuiCommand : HostedGuiCommandBase, IGuiCommand
 {
-    private static PhantomMailGuiCommand? _singleton;
-
+    private const bool MouseEnabledValue = false;
     private readonly Dictionary<Guid, IMailService> _connectedAccounts = new();
     private readonly FileDialog _fileDialog;
+
     private readonly VaultPromptDialog _vaultPromptDialog;
+
+    // private new readonly PhantomMailStatusBar StatusBar;
     private EncryptableSettingsVault? _vault;
     private string? _vaultFile = Utilities.GetDefaultVaultFile();
 
-    public PhantomMailGuiCommand(ILogger logger, IConfiguration configuration, IConsole console) : base(logger: logger,
-        configuration: configuration,
-        console: console)
+    public PhantomMailGuiCommand() : base(run: false)
     {
-        if (_singleton != null)
-            throw new InvalidOperationException(message: "Only one instance of GuiCommand can be created");
-
-        _singleton = this;
-
         this._vaultPromptDialog = new VaultPromptDialog();
 
         /*
@@ -61,14 +56,43 @@ public class PhantomMailGuiCommand : GuiCommand, IGuiCommand
             ustring.Make(str: Path.GetDirectoryName(path: Utilities.GetDefaultVaultFile()));
         this._fileDialog.FilePath = ustring.Make(str: Path.GetFileName(path: Utilities.GetDefaultVaultFile()));
 
-        Application.Top.Remove(view: this.StatusBar);
-        this.StatusBar = new PhantomMailStatusBar(guiCommand: this);
-        Application.Top.Add(view: this.StatusBar);
+        // we've suppressed the run call in the parent via the run parameter above.
+        // notation in case you searched for "Application.Run(" double checking invocations
+        Application.Run(view: GuiUtilities.GetNewTopLevel(guiCommand: this));
     }
 
-    public new static PhantomMailGuiCommand Singleton
-        => _singleton ?? throw new InvalidOperationException(message: "GuiCommand has not been initialized");
+    public PhantomMailGuiCommand(ILogger logger, IConfiguration configuration, IConsole console) : base(logger: logger,
+        configuration: configuration,
+        console: console,
+        run: false,
+        window: new PhantomKitWindow(),
+        menu: new PhantomKitMainMenu(guiCommandType: typeof(PhantomMailGuiCommand)),
+        statusBar: new PhantomMailStatusBar(guiCommandType: typeof(PhantomMailGuiCommand)))
+    {
+        this._vaultPromptDialog = new VaultPromptDialog();
 
+        /*
+        // keep a reference to the settings vault
+        this.SettingsVault = AppLoadVaultOrNewVault();
+        */
+
+        this._fileDialog = new FileDialog(
+            title: "Select vault",
+            prompt: "Open",
+            nameFieldLabel: "File",
+            message: "Select a vault json file to open",
+            allowedTypes: new List<string> {".json"});
+        this._fileDialog.CanCreateDirectories = true;
+        this._fileDialog.AllowsOtherFileTypes = false;
+        // default to the preferred location/file
+        this._fileDialog.DirectoryPath =
+            ustring.Make(str: Path.GetDirectoryName(path: Utilities.GetDefaultVaultFile()));
+        this._fileDialog.FilePath = ustring.Make(str: Path.GetFileName(path: Utilities.GetDefaultVaultFile()));
+
+        // we've suppressed the run call in the parent via the run parameter above.
+        // notation in case you searched for "Application.Run(" double checking invocations
+        Application.Run(view: GuiUtilities.GetNewTopLevel(guiCommand: this));
+    }
 
     [Option(optionType: CommandOptionType.SingleValue,
         ShortName = "v",
@@ -101,67 +125,70 @@ public class PhantomMailGuiCommand : GuiCommand, IGuiCommand
         ? this.SettingsVault.MailAccounts(vaultKey: this.SettingsVault.VaultKey)
         : throw new VaultNotLoadedException();
 
+    public override bool MouseEnabled { get; init; } = MouseEnabledValue;
+
+    /// <summary>
+    /// </summary>
+    /// parent is abstract, so we need to override it
+    /// <param name="app"></param>
+    /// <returns></returns>
     public override int OnExecute(CommandLineApplication app)
     {
-        if (Debugger.IsAttached)
-            CultureInfo.DefaultThreadCurrentUICulture = CultureInfo.GetCultureInfo(name: "en-US");
-
-        Application.Init();
-        Application.HeightAsBuffer = true;
-        SetTheme(
-            theme: HumanEditableTheme.Themes.Dark,
-            instance: this);
-
-        var newTop = Application.Top;
-        newTop.Clear();
-        this.Menu = new PhantomKitMainMenu();
-        newTop.Add(view: this.Menu);
-        newTop.Add(view: new PhantomMailStatusBar(guiCommand: this));
-        var win = new PhantomKitWindow();
-        win.KeyPress += Win_KeyPress;
-        newTop.Add(view: win);
-
-        this.SelectAndLoadOrCreateVaultWithKeyPrompt(destination: newTop);
-
-        Application.Run(view: newTop);
-        return 0;
+        // implementation comes from extension method
+        return this.OnExecute(
+            app: app,
+            beforeRun: this.SelectAndLoadOrCreateVaultWithKeyPrompt);
     }
 
-    public new void Dispose()
+    public override void Dispose()
     {
         foreach (var (guid, connection) in this._connectedAccounts)
             this.DisconnectAccount(accountId: guid,
-                quit: true);
+                quit: true,
+                connectedAccount: connection);
         this.SettingsVault.Dispose();
-        base.Dispose();
+        this._vaultPromptDialog?.Dispose();
+        this._fileDialog?.Dispose();
+        //guiCommand.SuspendUi();
+        // guiCommand.Running = false;
+
+        this.Window?.Dispose();
+        this.Menu?.Dispose();
+        if (this.Window is not null && this.Running) this.Window.Dispose();
     }
 
     public void LoadSavedTheme()
     {
-        SetTheme(
-            theme: this._vault!.Theme,
-            instance: this);
+        if (this.VaultLoaded)
+            this.SetTheme(
+                theme: this._vault!.Theme);
     }
 
-    private void ShowFileDialog(Toplevel newTop)
+    private void ShowFileDialog()
     {
+        var newTop = GuiUtilities.GetNewTopLevel(guiCommand: this);
         newTop.Add(view: this._fileDialog);
+        // running a "true" view, as opposed to an application
+        // notation in case you searched for "Application.Run(" double checking invocations
         Application.Run(view: newTop);
         newTop.Remove(view: this._fileDialog);
     }
 
-    private void ShowVaultPrompt(Toplevel newTop, bool verify)
+    private void ShowVaultPrompt(bool verify)
     {
-        if (this._vaultPromptDialog.VaultKeySecureString is { } secureString) return;
+        var newTop = GuiUtilities.GetNewTopLevel(guiCommand: this);
+        this._vaultPromptDialog.ClearSecureString(dispose: false);
         this._vaultPromptDialog.SetPasswordLabel(verify: verify);
         newTop.Add(view: this._vaultPromptDialog);
+        // running a "true" view, as opposed to an application
+        // notation in case you searched for "Application.Run(" double checking invocations
         Application.Run(view: newTop);
         newTop.Remove(view: this._vaultPromptDialog);
     }
 
-    public void SelectAndLoadOrCreateVaultWithKeyPrompt(Toplevel destination)
+    public void SelectAndLoadOrCreateVaultWithKeyPrompt()
     {
-        this.ShowFileDialog(newTop: destination);
+        this.ShowFileDialog();
 
         if (this._fileDialog.Canceled)
             return;
@@ -186,8 +213,7 @@ public class PhantomMailGuiCommand : GuiCommand, IGuiCommand
 
         this._vaultFile = vaultFileName;
 
-        this.ShowVaultPrompt(newTop: destination,
-            verify: false);
+        this.ShowVaultPrompt(verify: false);
 
         using var vaultKey = this._vaultPromptDialog.VaultKeySecureString;
         // canceled?
@@ -197,8 +223,7 @@ public class PhantomMailGuiCommand : GuiCommand, IGuiCommand
         if (newFile)
         {
             // verify the vault key
-            this.ShowVaultPrompt(newTop: destination,
-                verify: true);
+            this.ShowVaultPrompt(verify: true);
 
             using var vaultKeyVerify = this._vaultPromptDialog.VaultKeySecureString;
             if (vaultKeyVerify is null)
@@ -366,14 +391,19 @@ public class PhantomMailGuiCommand : GuiCommand, IGuiCommand
 
     public bool LoadVaultWithChangePrompt(SecureString vaultKey)
     {
-        var q = MessageBox.Query(
-            width: 50,
-            height: 7,
-            title: "Load",
-            message: this.SettingsVault.HasChanged ? "Changes detected. Load without saving?" : "Load",
-            "Yes",
-            "Cancel");
-        if (q != 0) return false;
+        if (this.VaultLoaded)
+        {
+            var q = MessageBox.Query(
+                width: 50,
+                height: 7,
+                title: "Load Vault",
+                message: this.SettingsVault.HasChanged
+                    ? "Changes detected. Load without saving?"
+                    : "Load and replace existing (saved) vault?",
+                "Yes",
+                "Cancel");
+            if (q != 0) return false;
+        }
 
         try
         {
@@ -490,17 +520,32 @@ public class PhantomMailGuiCommand : GuiCommand, IGuiCommand
     /// </summary>
     /// <param name="accountId"></param>
     /// <param name="quit"></param>
+    /// <param name="connectedAccount"></param>
     /// <returns>A boolean indicating whether the account was connected previously</returns>
-    public bool DisconnectAccount(Guid accountId, bool quit)
+    public bool DisconnectAccount(Guid accountId, bool quit, IMailService? connectedAccount = null)
     {
         if (!this._connectedAccounts.ContainsKey(key: accountId))
             return false;
+
         var connection = this._connectedAccounts[key: accountId];
-        connection.Disconnect(quit: true);
+
+        if (connectedAccount is not null)
+        {
+            if (connectedAccount.IsConnected)
+                connectedAccount.Disconnect(quit: quit);
+
+            if (quit)
+                connectedAccount.Dispose();
+        }
+
+        if (connection.IsConnected)
+            connection.Disconnect(quit: quit);
+
         if (quit)
             connection.Dispose();
         else
             this._connectedAccounts.Remove(key: accountId);
+
         return true;
     }
 

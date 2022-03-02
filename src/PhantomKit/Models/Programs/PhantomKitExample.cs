@@ -62,7 +62,7 @@ public static class PhantomKit
         var cancellationTokenSource = new CancellationTokenSource();
         var cancellationToken = cancellationTokenSource.Token;
         using var host = hostBuilder
-            .UseCommandLineApplication<GuiCommand>(args: args)
+            .UseCommandLineApplication<HostedGuiCommandBase>(args: args)
             .Build();
         var result = await host
             .RunCommandLineApplicationAsync(cancellationToken: cancellationToken);

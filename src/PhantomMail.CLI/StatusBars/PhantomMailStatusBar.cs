@@ -1,6 +1,6 @@
 using PhantomKit.Helpers;
+using PhantomKit.Interfaces;
 using PhantomKit.Models;
-using PhantomKit.Models.Commands;
 using PhantomKit.Models.StatusBars;
 using PhantomKit.Models.Themes;
 using PhantomMail.CLI.Commands;
@@ -10,8 +10,12 @@ namespace PhantomMail.CLI.StatusBars;
 
 public class PhantomMailStatusBar : PhantomKitStatusBar
 {
-    public PhantomMailStatusBar(PhantomMailGuiCommand guiCommand) : base(guiCommand: guiCommand)
+    private readonly PhantomMailGuiCommand _command;
+
+    public PhantomMailStatusBar(Type guiCommandType) : base(guiCommandType: guiCommandType)
     {
+        this._command =
+            (IGuiCommand.GetInstance(guiCommandType: typeof(PhantomMailGuiCommand)) as PhantomMailGuiCommand)!;
         this.Items = new[]
         {
             new(shortcut: Key.F1,
@@ -24,47 +28,38 @@ public class PhantomMailStatusBar : PhantomKitStatusBar
                     "Ok")),
             new StatusItem(shortcut: Key.F2,
                 title: "~F2~ Load",
-                action: () => guiCommand.SelectAndLoadOrCreateVaultWithKeyPrompt(
-                    destination: guiCommand.RebuildWindow())),
+                action: this.VaultLoadClick),
             new StatusItem(shortcut: Key.F3,
                 title: "~F3~ Save",
-                action: () =>
-                {
-                    if (!guiCommand.VaultLoaded) return;
-                    guiCommand.SaveVaultWithChangePrompt(vaultFileName: guiCommand.VaultFile!);
-                }),
+                action: this.VaultSaveClick),
             new StatusItem(shortcut: Key.CtrlMask | Key.Q,
                 title: "~^Q~ Quit",
-                action: () =>
-                {
-                    if (GuiCommand.Quit() && Application.Top is not null) Application.Top.Running = false;
-                }),
+                action: this.QuitClick),
             new StatusItem(shortcut: Key.F10,
                 title: "~F10~ Light/Dark",
-                action: () =>
-                {
-                    if (!guiCommand.DarkMode)
-                    {
-                        GuiCommand.SetTheme(theme: HumanEditableTheme.Themes.Dark,
-                            instance: guiCommand);
-                        if (guiCommand.VaultLoaded)
-                            guiCommand.SettingsVault.EncryptableSettings[key: nameof(EncryptableSettingsVault.Theme)] =
-                                DarkHumanEditableTheme.Name;
-                    }
-                    else
-                    {
-                        GuiCommand.SetTheme(theme: HumanEditableTheme.Themes.Blue,
-                            instance: guiCommand);
-                        if (guiCommand.VaultLoaded)
-                            guiCommand.SettingsVault.EncryptableSettings[key: nameof(EncryptableSettingsVault.Theme)] =
-                                BlueHumanEditableTheme.Name;
-                    }
-
-                    guiCommand.DarkMode = !guiCommand.DarkMode;
-                }),
+                action: this.LightDarkClick),
             new StatusItem(shortcut: Key.Null,
                 title: Constants.ProgramName /* Application.Driver.GetType().Name */,
                 action: null),
         };
+    }
+
+    public void VaultSaveClick()
+    {
+        if (!this._command.VaultLoaded) return;
+        this._command.SaveVaultWithChangePrompt(vaultFileName: this._command.VaultFile!);
+    }
+
+    public void VaultLoadClick()
+    {
+        this._command.SelectAndLoadOrCreateVaultWithKeyPrompt();
+    }
+
+    public override void LightDarkClick()
+    {
+        base.LightDarkClick();
+        if (this._command.VaultLoaded)
+            this._command.SettingsVault.EncryptableSettings[key: nameof(EncryptableSettingsVault.Theme)] =
+                this._command.DarkMode ? DarkHumanEditableTheme.Name : BlueHumanEditableTheme.Name;
     }
 }

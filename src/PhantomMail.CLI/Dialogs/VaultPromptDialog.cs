@@ -24,6 +24,7 @@ public class VaultPromptDialog : Dialog
         X = 2,
         Y = 1,
         Width = DefaultWidth - 6,
+        TabIndex = 0,
     };
 
     private Label _passwordLabel;
@@ -34,23 +35,28 @@ public class VaultPromptDialog : Dialog
         height: height,
         buttons: new[] {PasswordDialogOkButton, PasswordDialogCancelButton})
     {
-        this._passwordLabel = GetPasswordLabel(verify: verify);
-        this.SetPasswordLabel(verify: verify);
-        PasswordDialogOkButton.Clicked += this.OnPasswordDialogOkClicked;
-        PasswordDialogCancelButton.Clicked += this.OnPasswordDialogCancelClicked;
+        this._passwordLabel = GetNewPasswordLabel(verify: verify);
         base.Add(view: this._passwordLabel);
         base.Add(view: VaultPassword);
-        VaultPassword.SetFocus();
+        PasswordDialogOkButton.Clicked += this.OnPasswordDialogOkClicked;
+        PasswordDialogCancelButton.Clicked += this.OnPasswordDialogCancelClicked;
     }
 
     public SecureString? VaultKeySecureString { get; private set; }
+
+    public void ClearSecureString(bool dispose = true)
+    {
+        if (dispose)
+            this.VaultKeySecureString?.Dispose();
+        this.VaultKeySecureString = null;
+    }
 
     private static ustring PasswordLabelString(bool verify)
     {
         return ustring.Make(str: verify ? "Verify:" : "Password:");
     }
 
-    public static Label GetPasswordLabel(bool verify)
+    public static Label GetNewPasswordLabel(bool verify)
     {
         var labelString = PasswordLabelString(verify: verify);
         return new Label(text: labelString)
@@ -63,7 +69,17 @@ public class VaultPromptDialog : Dialog
 
     public void SetPasswordLabel(bool verify)
     {
-        this._passwordLabel = GetPasswordLabel(verify: verify);
+        try
+        {
+            base.Remove(view: this._passwordLabel);
+        }
+        catch (Exception _)
+        {
+            // ignored
+        }
+
+        this._passwordLabel = GetNewPasswordLabel(verify: verify);
+        base.Add(view: this._passwordLabel);
     }
 
     private void OnPasswordDialogOkClicked()
@@ -73,6 +89,7 @@ public class VaultPromptDialog : Dialog
         var result = new SecureString();
         foreach (var c in insecurePassword) result.AppendChar(c: c);
         result.MakeReadOnly();
+        this.VaultKeySecureString?.Dispose();
         this.VaultKeySecureString = result;
         Application.RequestStop();
     }
@@ -80,7 +97,7 @@ public class VaultPromptDialog : Dialog
     private void OnPasswordDialogCancelClicked()
     {
         VaultPassword.Text = ustring.Make(str: string.Empty);
-        this.VaultKeySecureString = null;
+        this.ClearSecureString();
         Application.RequestStop();
     }
 }

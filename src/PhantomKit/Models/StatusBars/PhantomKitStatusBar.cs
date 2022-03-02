@@ -1,4 +1,5 @@
 using PhantomKit.Helpers;
+using PhantomKit.Interfaces;
 using PhantomKit.Models.Commands;
 using PhantomKit.Models.Themes;
 using Terminal.Gui;
@@ -7,8 +8,11 @@ namespace PhantomKit.Models.StatusBars;
 
 public class PhantomKitStatusBar : StatusBar
 {
-    public PhantomKitStatusBar(GuiCommand guiCommand)
+    private readonly HostedGuiCommandBase _command;
+
+    public PhantomKitStatusBar(Type guiCommandType)
     {
+        this._command = IGuiCommand.GetInstance(guiCommandType: guiCommandType);
         this.Items = new[]
         {
             new(shortcut: Key.F1,
@@ -21,26 +25,28 @@ public class PhantomKitStatusBar : StatusBar
                     "Ok")),
             new StatusItem(shortcut: Key.CtrlMask | Key.Q,
                 title: "~^Q~ Quit",
-                action: () =>
-                {
-                    if (GuiCommand.Quit() && Application.Top is not null) Application.Top.Running = false;
-                }),
+                action: this.QuitClick),
             new StatusItem(shortcut: Key.F10,
                 title: "~F10~ Light/Dark",
-                action: () =>
-                {
-                    if (!guiCommand.DarkMode)
-                        GuiCommand.SetTheme(theme: HumanEditableTheme.Themes.Dark,
-                            instance: guiCommand);
-                    else
-                        GuiCommand.SetTheme(theme: HumanEditableTheme.Themes.Blue,
-                            instance: guiCommand);
-
-                    guiCommand.DarkMode = !guiCommand.DarkMode;
-                }),
+                action: this.LightDarkClick),
             new StatusItem(shortcut: Key.Null,
                 title: Constants.ProgramName /* Application.Driver.GetType().Name */,
                 action: null),
         };
+    }
+
+
+    public virtual void LightDarkClick()
+    {
+        this._command.SetTheme(theme: !this._command.DarkMode
+            ? HumanEditableTheme.Themes.Dark
+            : HumanEditableTheme.Themes.Blue);
+
+        this._command.DarkMode = !this._command.DarkMode;
+    }
+
+    public void QuitClick()
+    {
+        if (GuiUtilities.QuitPrompt() && Application.Top is not null) Application.Top.Running = false;
     }
 }
