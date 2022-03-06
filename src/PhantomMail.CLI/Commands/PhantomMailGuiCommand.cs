@@ -131,13 +131,17 @@ public class PhantomMailGuiCommand : HostedGuiCommandBase
     public void LoadSavedTheme()
     {
         if (this.VaultLoaded)
-            this.SetTheme(
-                theme: this._vault!.Theme);
+        {
+            var theme = this._vault!.Theme;
+            GuiUtilities.SetColorsFromTheme(
+                theme: theme);
+            this.UpdateTheme(theme: theme);
+        }
     }
 
     private void ShowFileDialog()
     {
-        var top = GuiUtilities.GetNewTopLevel(newTop: Application.Top);
+        var top = GuiUtilities.GetNewTopLevel(clearExistingTop: Application.Top);
         top.Add(view: this._fileDialog);
         Application.Run(view: top);
         top.Remove(view: this._fileDialog);
@@ -145,7 +149,7 @@ public class PhantomMailGuiCommand : HostedGuiCommandBase
 
     private SecureString? ShowVaultPrompt(bool verify)
     {
-        var top = GuiUtilities.GetNewTopLevel(newTop: Application.Top);
+        var top = GuiUtilities.GetNewTopLevel(clearExistingTop: Application.Top);
         var vaultPrompt = new VaultPromptDialog(withVerify: verify);
         top.Add(view: vaultPrompt);
         Application.Run(view: top);

@@ -61,10 +61,12 @@ public class PhantomKitStatusBar : StatusBar
 
     public virtual void LightDarkClick()
     {
-        this.GuiCommand.SetTheme(theme: !this.GuiCommand.DarkMode
-            ? HumanEditableTheme.Themes.Dark
-            : HumanEditableTheme.Themes.Blue);
         this.GuiCommand.DarkMode = !this.GuiCommand.DarkMode;
+        var theme = this.GuiCommand.DarkMode
+            ? HumanEditableTheme.Themes.Dark
+            : HumanEditableTheme.Themes.Blue;
+        GuiUtilities.SetColorsFromTheme(theme: theme);
+        this.GuiCommand.UpdateTheme(theme: theme);
     }
 
     public virtual void QuitClick()

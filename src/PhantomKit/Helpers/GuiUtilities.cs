@@ -6,23 +6,32 @@ namespace PhantomKit.Helpers;
 
 public static class GuiUtilities
 {
-    public static void SetupTopLevel(IGuiCommand guiCommand, Toplevel newTop)
+    public static void SetupTopLevel(IGuiCommand guiCommand, Toplevel top)
     {
-        newTop.ColorScheme = (guiCommand.DarkMode ? HumanEditableTheme.Themes.Dark : HumanEditableTheme.Themes.Blue)
+        top.ColorScheme = (guiCommand.DarkMode ? HumanEditableTheme.Themes.Dark : HumanEditableTheme.Themes.Blue)
             .TopLevel
             .ToColorScheme();
-        newTop.Add(view: guiCommand.Menu);
-        newTop.Add(view: guiCommand.StatusBar);
-        newTop.Add(view: guiCommand.Window);
+        top.Add(view: guiCommand.Menu);
+        top.Add(view: guiCommand.StatusBar);
+        top.Add(view: guiCommand.Window);
     }
 
-    public static Toplevel GetNewTopLevel(Toplevel? newTop = null)
+    public static Toplevel GetNewTopLevel(Toplevel? clearExistingTop = null)
     {
-        if (newTop is null)
-            newTop ??= Toplevel.Create();
-        else
-            newTop.Clear();
-        return newTop;
+        if (clearExistingTop is null)
+            return Toplevel.Create();
+
+        clearExistingTop.Clear();
+        return clearExistingTop;
+    }
+
+    public static void SetColorsFromTheme(HumanEditableTheme theme)
+    {
+        Colors.TopLevel = theme.TopLevel.ToColorScheme();
+        Colors.Base = theme.Base.ToColorScheme();
+        Colors.Menu = theme.Menu.ToColorScheme();
+        Colors.Error = theme.Error.ToColorScheme();
+        Colors.Dialog = theme.Dialog.ToColorScheme();
     }
 
     /// <summary>

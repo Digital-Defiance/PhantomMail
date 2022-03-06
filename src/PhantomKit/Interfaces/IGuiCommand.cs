@@ -109,5 +109,4 @@ public interface IGuiCommand : IDisposable
     void Cut();
     void Paste();
     void AskQuit();
-    void SetTheme(HumanEditableTheme theme);
 }

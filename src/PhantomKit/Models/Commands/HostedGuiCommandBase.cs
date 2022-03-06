@@ -47,6 +47,11 @@ public abstract class HostedGuiCommandBase : IGuiCommand
         this.Window = new PhantomKitWindow(guiCommand: this);
         this.Menu = new PhantomKitMainMenu(guiCommand: this);
         this.StatusBar = new PhantomKitStatusBar(guiCommand: this);
+        var theme = this.DarkMode
+            ? HumanEditableTheme.Themes.Dark
+            : HumanEditableTheme.Themes.Blue;
+        GuiUtilities.SetColorsFromTheme(theme: theme);
+        this.UpdateTheme(theme: theme);
     }
 
     public HostedGuiCommandBase Instance { get; init; }
@@ -73,16 +78,16 @@ public abstract class HostedGuiCommandBase : IGuiCommand
         if (Debugger.IsAttached)
             CultureInfo.DefaultThreadCurrentUICulture = CultureInfo.GetCultureInfo(name: "en-US");
 
-        this.SetTheme(
-            theme: this.DarkMode ? HumanEditableTheme.Themes.Dark : HumanEditableTheme.Themes.Blue);
-        ;
-
+        var theme = this.DarkMode ? HumanEditableTheme.Themes.Dark : HumanEditableTheme.Themes.Blue;
+        GuiUtilities.SetColorsFromTheme(
+            theme: theme);
+        this.UpdateTheme(theme: theme);
         this.StatusBar.SetStatus(title: "[no vault]");
 
-        var newTop = GuiUtilities.GetNewTopLevel(newTop: Application.Top);
-        GuiUtilities.SetupTopLevel(guiCommand: this,
-            newTop: newTop);
-        Application.Run(view: newTop);
+        GuiUtilities.SetupTopLevel(
+            guiCommand: this,
+            top: Application.Top);
+        Application.Run();
         return 0;
     }
 
@@ -123,15 +128,6 @@ public abstract class HostedGuiCommandBase : IGuiCommand
         // ReSharper enable ConditionIsAlwaysTrueOrFalse
     }
 
-    public void SetTheme(HumanEditableTheme theme)
-    {
-        Colors.TopLevel = theme.TopLevel.ToColorScheme();
-        Colors.Base = theme.Base.ToColorScheme();
-        Colors.Menu = theme.Menu.ToColorScheme();
-        Colors.Error = theme.Error.ToColorScheme();
-        Colors.Dialog = theme.Dialog.ToColorScheme();
-        this.UpdateTheme(theme: theme);
-    }
 
     public void SuspendUi()
     {
