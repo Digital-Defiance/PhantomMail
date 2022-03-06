@@ -188,5 +188,9 @@ public abstract class HostedGuiCommandBase : IGuiCommand
         Environment.Exit(exitCode: exitCode);
     }
 
-    public abstract void Dispose();
+    public void Dispose()
+    {
+        this.Menu?.Dispose();
+        this.Window?.Dispose();
+    }
 }

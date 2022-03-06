@@ -24,7 +24,6 @@ public class PhantomMailGuiCommand : HostedGuiCommandBase
 {
     private const bool MouseEnabledValue = false;
     private readonly Dictionary<Guid, IMailService> _connectedAccounts = new();
-    private readonly FileDialog _fileDialog;
 
 
     // private new readonly PhantomMailStatusBar StatusBar;
@@ -36,24 +35,6 @@ public class PhantomMailGuiCommand : HostedGuiCommandBase
         this.Window = new PhantomKitWindow(guiCommand: this);
         this.StatusBar = new PhantomMailStatusBar(guiCommand: this);
         this.Menu = new PhantomMailMainMenu(guiCommand: this);
-
-        /*
-        // keep a reference to the settings vault
-        this.SettingsVault = AppLoadVaultOrNewVault();
-        */
-
-        this._fileDialog = new FileDialog(
-            title: "Select vault",
-            prompt: "Open",
-            nameFieldLabel: "File",
-            message: "Select a vault json file to open",
-            allowedTypes: new List<string> {".json"});
-        this._fileDialog.CanCreateDirectories = true;
-        this._fileDialog.AllowsOtherFileTypes = false;
-        // default to the preferred location/file
-        this._fileDialog.DirectoryPath =
-            ustring.Make(str: Path.GetDirectoryName(path: Utilities.GetDefaultVaultFile()));
-        this._fileDialog.FilePath = ustring.Make(str: Path.GetFileName(path: Utilities.GetDefaultVaultFile()));
     }
 
     public PhantomMailGuiCommand(ILogger logger, IConfiguration configuration, IConsole console)
@@ -61,24 +42,6 @@ public class PhantomMailGuiCommand : HostedGuiCommandBase
         this.Window = new PhantomKitWindow(guiCommand: this);
         this.StatusBar = new PhantomMailStatusBar(guiCommand: this);
         this.Menu = new PhantomMailMainMenu(guiCommand: this);
-
-        /*
-        // keep a reference to the settings vault
-        this.SettingsVault = AppLoadVaultOrNewVault();
-        */
-
-        this._fileDialog = new FileDialog(
-            title: "Select vault",
-            prompt: "Open",
-            nameFieldLabel: "File",
-            message: "Select a vault json file to open",
-            allowedTypes: new List<string> {".json"});
-        this._fileDialog.CanCreateDirectories = true;
-        this._fileDialog.AllowsOtherFileTypes = false;
-        // default to the preferred location/file
-        this._fileDialog.DirectoryPath =
-            ustring.Make(str: Path.GetDirectoryName(path: Utilities.GetDefaultVaultFile()));
-        this._fileDialog.FilePath = ustring.Make(str: Path.GetFileName(path: Utilities.GetDefaultVaultFile()));
     }
 
     [Option(optionType: CommandOptionType.SingleValue,
@@ -113,19 +76,14 @@ public class PhantomMailGuiCommand : HostedGuiCommandBase
 
     public override bool MouseEnabled { get; init; } = MouseEnabledValue;
 
-    public override void Dispose()
+    public new void Dispose()
     {
         foreach (var (guid, connection) in this._connectedAccounts)
             this.DisconnectAccount(accountId: guid,
                 quit: true,
                 connectedAccount: connection);
         this.SettingsVault.Dispose();
-        this._fileDialog?.Dispose();
-        //guiCommand.SuspendUi();
-        // guiCommand.Running = false;
-
-        this.Window?.Dispose();
-        this.Menu?.Dispose();
+        base.Dispose();
     }
 
     public void LoadSavedTheme()
@@ -139,12 +97,27 @@ public class PhantomMailGuiCommand : HostedGuiCommandBase
         }
     }
 
-    private void ShowFileDialog()
+    private FileDialog ShowFileDialog()
     {
+        var fileDialog = new FileDialog(
+            title: "Select vault",
+            prompt: "Open",
+            nameFieldLabel: "File",
+            message: "Select a vault json file to open",
+            allowedTypes: new List<string> {".json"});
+        fileDialog.CanCreateDirectories = true;
+        fileDialog.AllowsOtherFileTypes = false;
+        // default to the preferred location/file
+        fileDialog.DirectoryPath =
+            ustring.Make(str: Path.GetDirectoryName(path: Utilities.GetDefaultVaultFile()));
+        fileDialog.FilePath = ustring.Make(str: Path.GetFileName(path: Utilities.GetDefaultVaultFile()));
+
         var top = GuiUtilities.GetNewTopLevel(clearExistingTop: Application.Top);
-        top.Add(view: this._fileDialog);
+        top.Add(view: fileDialog);
         Application.Run(view: top);
-        top.Remove(view: this._fileDialog);
+        top.Remove(view: fileDialog);
+
+        return fileDialog;
     }
 
     private SecureString? ShowVaultPrompt(bool verify)
@@ -159,12 +132,12 @@ public class PhantomMailGuiCommand : HostedGuiCommandBase
 
     public void SelectAndLoadOrCreateVaultWithKeyPrompt()
     {
-        this.ShowFileDialog();
+        var fileDialog = this.ShowFileDialog();
 
-        if (this._fileDialog.Canceled)
+        if (fileDialog.Canceled)
             return;
 
-        var vaultFile = this._fileDialog.FilePath;
+        var vaultFile = fileDialog.FilePath;
         if (vaultFile is null || vaultFile.IsEmpty)
             return;
 
