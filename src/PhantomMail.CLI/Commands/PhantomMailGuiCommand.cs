@@ -4,7 +4,6 @@ using McMaster.Extensions.CommandLineUtils;
 using Microsoft.Extensions.Configuration;
 using NStack;
 using PhantomKit.Exceptions;
-using PhantomKit.Extensions;
 using PhantomKit.Helpers;
 using PhantomKit.Models;
 using PhantomKit.Models.Commands;
@@ -532,16 +531,4 @@ public class PhantomMailGuiCommand : HostedGuiCommandBase
                 BorderThickness = new Thickness {Left = 1, Right = 1, Top = 1, Bottom = 1},
             });
     }*/
-
-    /// <summary>
-    /// </summary>
-    /// parent is abstract, so we need to override it
-    /// <param name="app"></param>
-    /// <returns></returns>
-    public override int OnExecute(CommandLineApplication app)
-    {
-        // implementation comes from extension method
-        return GuiCommandExtensions.OnExecute(hostedGuiCommand: this,
-            app: app);
-    }
 }

@@ -30,14 +30,14 @@ public interface IGuiCommand : IDisposable
     /// </summary>
     public bool Running { get; }
 
-    bool MouseEnabled { get; init; }
-    IConfiguration Configuration { get; }
-    IConsole Console { get; }
-    ILogger Logger { get; }
-    PhantomKitMainMenu Menu { get; }
-    PhantomKitStatusBar StatusBar { get; }
-    PhantomKitWindow? Window { get; }
-    bool DarkMode { get; set; }
+    public bool MouseEnabled { get; init; }
+    public IConfiguration Configuration { get; }
+    public IConsole Console { get; }
+    public ILogger Logger { get; }
+    public PhantomKitMainMenu Menu { get; }
+    public PhantomKitStatusBar StatusBar { get; }
+    public PhantomKitWindow? Window { get; }
+    public bool DarkMode { get; set; }
 
     internal static bool SingletonMade(Type t)
     {
