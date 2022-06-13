@@ -12,7 +12,7 @@ public record HumanEditableAttribute
     [JsonIgnore]
     public Color ForegroundColor
     {
-        get => (Color) Enum.Parse(enumType: typeof(Color),
+        get => (Color)Enum.Parse(enumType: typeof(Color),
             value: this.Foreground,
             ignoreCase: true);
         set => this.Foreground = Enum.GetName(enumType: typeof(Color),
@@ -24,7 +24,7 @@ public record HumanEditableAttribute
     [JsonIgnore]
     public Color BackgroundColor
     {
-        get => (Color) Enum.Parse(enumType: typeof(Color),
+        get => (Color)Enum.Parse(enumType: typeof(Color),
             value: this.Background,
             ignoreCase: true);
         set => this.Background = Enum.GetName(enumType: typeof(Color),
@@ -35,7 +35,7 @@ public record HumanEditableAttribute
     {
         // Encode the colors into the int value.
         return new Attribute(
-            value: (int) f | ((int) b << 4),
+            value: (int)f | ((int)b << 4),
             foreground: f,
             background: b
         );

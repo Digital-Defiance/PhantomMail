@@ -95,7 +95,7 @@ public interface IGuiCommand : IDisposable
         if (!typeof(T).IsAssignableTo(targetType: typeof(HostedGuiCommandBase)))
             throw new Exception(message: $"Singleton of type {typeof(T).Name} is not a HostedGuiCommandBase");
         var command = GetInstance(guiCommandType: typeof(T));
-        return (T) Convert.ChangeType(value: command,
+        return (T)Convert.ChangeType(value: command,
             conversionType: typeof(T));
     }
 

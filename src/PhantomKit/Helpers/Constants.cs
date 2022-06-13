@@ -1,6 +1,6 @@
+using PhantomKit.Models.Themes;
 using System.IO.Compression;
 using System.Security.Cryptography;
-using PhantomKit.Models.Themes;
 using Version = SemanticVersioning.Version;
 
 namespace PhantomKit.Helpers;

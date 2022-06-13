@@ -10,7 +10,8 @@ public record HumanEditableTheme(HumanEditableColorScheme TopLevel, HumanEditabl
 {
     [JsonIgnore] public const string Name = "Terminal";
 
-    [JsonIgnore] public static readonly ImmutableDictionary<string, HumanEditableTheme> BuiltinThemes =
+    [JsonIgnore]
+    public static readonly ImmutableDictionary<string, HumanEditableTheme> BuiltinThemes =
         new Dictionary<string, HumanEditableTheme>
         {
             {nameof(Themes.Blue), Themes.Blue},

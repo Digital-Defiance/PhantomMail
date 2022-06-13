@@ -1,7 +1,7 @@
-using System.Security;
-using System.Text.Json.Serialization;
 using PhantomKit.Exceptions;
 using PhantomKit.Helpers;
+using System.Security;
+using System.Text.Json.Serialization;
 
 namespace PhantomKit.Models.Settings;
 
@@ -37,7 +37,7 @@ public record EncryptableObjectSetting
         this.ValueTypeBase64 = Convert.ToBase64String(
             inArray: DataManipulation.Compress(
                 input: Utilities.TypeNameToString(
-                    type: valueType).Select(selector: c => (byte) c).ToArray(),
+                    type: valueType).Select(selector: c => (byte)c).ToArray(),
                 compressionLevel: Constants.TypeCompressionLevel));
     }
 
@@ -95,7 +95,7 @@ public record EncryptableObjectSetting
     public Type ValueType => Type.GetType(
         typeName: new string(value: DataManipulation.Decompress(
             input: Convert.FromBase64String(
-                s: this.ValueTypeBase64)).Select(selector: b => (char) b).ToArray()),
+                s: this.ValueTypeBase64)).Select(selector: b => (char)b).ToArray()),
         throwOnError: true,
         ignoreCase: false)!;
 

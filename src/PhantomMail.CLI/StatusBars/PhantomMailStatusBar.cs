@@ -15,7 +15,7 @@ public class PhantomMailStatusBar : PhantomKitStatusBar
         this.Items = this.BuildItems();
     }
 
-    private new PhantomMailGuiCommand GuiCommand => (PhantomMailGuiCommand) base.GuiCommand;
+    private new PhantomMailGuiCommand GuiCommand => (PhantomMailGuiCommand)base.GuiCommand;
 
 
     private StatusItem[] BuildItems()

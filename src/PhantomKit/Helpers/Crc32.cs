@@ -131,7 +131,7 @@ public static class Crc32
         var crc = 0xffffffff;
         foreach (var t in bytes)
         {
-            var index = (byte) ((crc & 0xff) ^ t);
+            var index = (byte)((crc & 0xff) ^ t);
             crc = (crc >> 8) ^ table[index];
         }
 

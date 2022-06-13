@@ -20,6 +20,6 @@ public class MenuItemDetails : MenuItem
 
     public static MenuItemDetails Instance(MenuItem mi)
     {
-        return (MenuItemDetails) mi.GetMenuItem();
+        return (MenuItemDetails)mi.GetMenuItem();
     }
 }

@@ -1,4 +1,3 @@
-using System.Security;
 using MailKit;
 using McMaster.Extensions.CommandLineUtils;
 using Microsoft.Extensions.Configuration;
@@ -13,6 +12,7 @@ using PhantomMail.CLI.Menus;
 using PhantomMail.CLI.StatusBars;
 using PhantomMail.Windows;
 using Serilog;
+using System.Security;
 using Terminal.Gui;
 
 namespace PhantomMail.CLI.Commands;
@@ -104,7 +104,7 @@ public class PhantomMailGuiCommand : HostedGuiCommandBase
             prompt: "Open",
             nameFieldLabel: "File",
             message: "Select a vault json file to open",
-            allowedTypes: new List<string> {".json"});
+            allowedTypes: new List<string> { ".json" });
         fileDialog.CanCreateDirectories = true;
         fileDialog.AllowsOtherFileTypes = false;
         // default to the preferred location/file

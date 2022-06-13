@@ -36,7 +36,7 @@ public static class DataManipulation
                 value: value,
                 options: NewSerializerOptions())
             .ToCharArray()
-            .Select(selector: c => (byte) c);
+            .Select(selector: c => (byte)c);
     }
 
     /// <summary>
@@ -47,7 +47,7 @@ public static class DataManipulation
     public static T Deserialize<T>(in IEnumerable<byte> data)
     {
         return JsonSerializer.Deserialize<T>(
-            json: new string(value: data.ToArray().Select(selector: b => (char) b).ToArray()),
+            json: new string(value: data.ToArray().Select(selector: b => (char)b).ToArray()),
             options: NewSerializerOptions())!;
     }
 
@@ -59,7 +59,7 @@ public static class DataManipulation
     public static object DeserializeToObject(in IEnumerable<byte> data, Type type)
     {
         return JsonSerializer.Deserialize(
-            json: new string(value: data.ToArray().Select(selector: b => (char) b).ToArray()),
+            json: new string(value: data.ToArray().Select(selector: b => (char)b).ToArray()),
             options: NewSerializerOptions(),
             returnType: type)!;
     }
@@ -171,12 +171,12 @@ public static class DataManipulation
     public static string Decompress(string input)
     {
         var compressed = Convert.FromBase64String(s: input);
-        return new string(value: Decompress(input: compressed).Select(selector: b => (char) b).ToArray());
+        return new string(value: Decompress(input: compressed).Select(selector: b => (char)b).ToArray());
     }
 
     public static string Compress(string input, CompressionLevel compressionLevel)
     {
-        var encoded = input.Select(selector: c => (byte) c).ToArray();
+        var encoded = input.Select(selector: c => (byte)c).ToArray();
         var compressed = Compress(input: encoded,
             compressionLevel: compressionLevel);
         return Convert.ToBase64String(inArray: compressed);

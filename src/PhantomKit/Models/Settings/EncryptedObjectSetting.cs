@@ -1,7 +1,7 @@
-using System.Security;
-using System.Text.Json.Serialization;
 using PhantomKit.Exceptions;
 using PhantomKit.Helpers;
+using System.Security;
+using System.Text.Json.Serialization;
 
 namespace PhantomKit.Models.Settings;
 

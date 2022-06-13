@@ -1,5 +1,5 @@
-using System.Security;
 using NStack;
+using System.Security;
 using Terminal.Gui;
 
 namespace PhantomMail.CLI.Dialogs;
@@ -26,7 +26,7 @@ public class VaultPromptDialog : Dialog
         title: TitleString(withVerify: withVerify),
         width: width,
         height: withVerify ? height + 1 : height,
-        buttons: new[] {PasswordDialogOkButton, PasswordDialogCancelButton})
+        buttons: new[] { PasswordDialogOkButton, PasswordDialogCancelButton })
     {
         var labelString = PasswordLabelString(verify: false);
         var verifyLabelString = PasswordLabelString(verify: true);

@@ -10,5 +10,5 @@ public class PhantomMailMainMenu : PhantomKitMainMenu
     {
     }
 
-    protected new PhantomMailGuiCommand GuiCommand => (PhantomMailGuiCommand) base.GuiCommand;
+    protected new PhantomMailGuiCommand GuiCommand => (PhantomMailGuiCommand)base.GuiCommand;
 }

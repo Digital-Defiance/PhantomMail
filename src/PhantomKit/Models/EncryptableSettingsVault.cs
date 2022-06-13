@@ -1,13 +1,13 @@
+using PhantomKit.Exceptions;
+using PhantomKit.Helpers;
+using PhantomKit.Models.Settings;
+using PhantomKit.Models.Themes;
 using System.Collections;
 using System.Collections.Immutable;
 using System.Runtime.InteropServices;
 using System.Security;
 using System.Text.Json;
 using System.Text.Json.Serialization;
-using PhantomKit.Exceptions;
-using PhantomKit.Helpers;
-using PhantomKit.Models.Settings;
-using PhantomKit.Models.Themes;
 using Version = SemanticVersioning.Version;
 
 namespace PhantomKit.Models;
@@ -123,10 +123,10 @@ public sealed record EncryptableSettingsVault : IDictionary<string, object>, IDi
         set => this.FileVersionString = value.ToString();
     }
 
-    public ICollection<string> Keys => ((IDictionary<string, object>) this.EncryptableSettings).Keys;
+    public ICollection<string> Keys => ((IDictionary<string, object>)this.EncryptableSettings).Keys;
 
     public ICollection<object> Values
-        => ((IDictionary<string, object>) this.EncryptableSettings).Values;
+        => ((IDictionary<string, object>)this.EncryptableSettings).Values;
 
     public void Add(string key, object value)
     {
@@ -154,15 +154,15 @@ public sealed record EncryptableSettingsVault : IDictionary<string, object>, IDi
 
     public object this[string key]
     {
-        get => ((IDictionary<string, object>) this.EncryptableSettings)[key: key];
+        get => ((IDictionary<string, object>)this.EncryptableSettings)[key: key];
         set
         {
             switch (value)
             {
-                case JsonElement {ValueKind: JsonValueKind.String} jsonElement:
+                case JsonElement { ValueKind: JsonValueKind.String } jsonElement:
                     this.EncryptableSettings[key: key] = jsonElement.GetString()!;
                     return;
-                case JsonElement {ValueKind: JsonValueKind.Object} jsonElement:
+                case JsonElement { ValueKind: JsonValueKind.Object } jsonElement:
                     var testEncryptedObject = jsonElement.Deserialize<EncryptedObjectSetting>();
                     if (testEncryptedObject is not null)
                     {
@@ -200,7 +200,7 @@ public sealed record EncryptableSettingsVault : IDictionary<string, object>, IDi
 
     IEnumerator IEnumerable.GetEnumerator()
     {
-        return ((IEnumerable) this.EncryptableSettings).GetEnumerator();
+        return ((IEnumerable)this.EncryptableSettings).GetEnumerator();
     }
 
     public void Add(KeyValuePair<string, object> item)
@@ -225,7 +225,7 @@ public sealed record EncryptableSettingsVault : IDictionary<string, object>, IDi
 
     public void CopyTo(KeyValuePair<string, object>[] array, int arrayIndex)
     {
-        if ((uint) arrayIndex > (uint) array.Length)
+        if ((uint)arrayIndex > (uint)array.Length)
             throw new IndexOutOfRangeException(
                 message: "The arrayIndex is greater than the array.Length");
 
@@ -340,7 +340,7 @@ public sealed record EncryptableSettingsVault : IDictionary<string, object>, IDi
         foreach (var (keyName, setting) in this.EncryptableSettings)
             switch (setting)
             {
-                case EncryptedObjectSetting {Encrypted: true} encryptedSetting:
+                case EncryptedObjectSetting { Encrypted: true } encryptedSetting:
                     try
                     {
                         EncryptedObjectSetting.DecryptAsBytes(key: key,
@@ -364,7 +364,7 @@ public sealed record EncryptableSettingsVault : IDictionary<string, object>, IDi
                     }
 
                     break;
-                case EncryptedObjectSetting {Encrypted: false} fauxEncryptedSetting:
+                case EncryptedObjectSetting { Encrypted: false } fauxEncryptedSetting:
                 case EncryptableObjectSetting encryptableObjectSetting:
                     // base encryptable object settings have no key to check
                     continue;
@@ -433,14 +433,14 @@ public sealed record EncryptableSettingsVault : IDictionary<string, object>, IDi
 
         var setting = this.EncryptableSettings[key: name];
         if (setting is string) return true;
-        return setting is EncryptableObjectSetting {Encrypted: false};
+        return setting is EncryptableObjectSetting { Encrypted: false };
     }
 
     public bool HasEncryptedSetting(string name)
     {
         if (!this.EncryptableSettings.ContainsKey(key: name)) return false;
         var setting = this.EncryptableSettings[key: name];
-        return setting is EncryptedObjectSetting {Encrypted: true};
+        return setting is EncryptedObjectSetting { Encrypted: true };
     }
 
     public object GetSetting(string name)

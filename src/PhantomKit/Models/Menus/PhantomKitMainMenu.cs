@@ -1,6 +1,6 @@
-using System.Reflection;
 using PhantomKit.Helpers;
 using PhantomKit.Models.Commands;
+using System.Reflection;
 using Terminal.Gui;
 
 namespace PhantomKit.Models.Menus;
@@ -87,7 +87,7 @@ public class PhantomKitMainMenu : MenuBar
         var flags = BindingFlags.Public | BindingFlags.Static;
         var minfo = typeof(MenuItemDetails).GetMethod(name: "Instance",
             bindingAttr: flags);
-        var mid = (PhantomMail.PhantomKit.MenuItemDelegate) Delegate.CreateDelegate(
+        var mid = (PhantomMail.PhantomKit.MenuItemDelegate)Delegate.CreateDelegate(
             type: typeof(PhantomMail.PhantomKit.MenuItemDelegate),
             method: minfo ?? throw new InvalidOperationException());
         MessageBox.Query(width: 70,

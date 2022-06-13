@@ -1,5 +1,5 @@
-using System.Security;
 using PhantomKit.Models.Commands;
+using System.Security;
 using Terminal.Gui;
 
 namespace PhantomKit.Models.Views;

@@ -244,7 +244,7 @@ public class Crc64 : HashAlgorithm
         var createTable = new ulong[256];
         for (var i = 0; i < 256; ++i)
         {
-            var entry = (ulong) i;
+            var entry = (ulong)i;
             for (var j = 0; j < 8; ++j)
                 if ((entry & 1) == 1)
                     entry = (entry >> 1) ^ polynomial;

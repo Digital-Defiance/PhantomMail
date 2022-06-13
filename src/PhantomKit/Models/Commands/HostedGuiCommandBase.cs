@@ -1,5 +1,3 @@
-using System.Diagnostics;
-using System.Globalization;
 using McMaster.Extensions.CommandLineUtils;
 using Microsoft.Extensions.Configuration;
 using PhantomKit.Helpers;
@@ -9,6 +7,8 @@ using PhantomKit.Models.StatusBars;
 using PhantomKit.Models.Themes;
 using PhantomMail.Windows;
 using Serilog;
+using System.Diagnostics;
+using System.Globalization;
 using Terminal.Gui;
 
 namespace PhantomKit.Models.Commands;

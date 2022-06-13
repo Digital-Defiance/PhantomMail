@@ -1,7 +1,7 @@
-using System.Runtime.InteropServices;
-using System.Security;
 using PhantomKit.Exceptions;
 using PhantomKit.Helpers;
+using System.Runtime.InteropServices;
+using System.Security;
 
 namespace PhantomKit.Models.Settings;
 
@@ -48,7 +48,7 @@ public sealed record EncryptedSecureStringSetting : EncryptedObjectSetting
         var secureValueString = Marshal.PtrToStringBSTR(ptr: stringPointer);
         Marshal.ZeroFreeBSTR(s: stringPointer);
 
-        var unencryptedBytes = secureValueString.ToCharArray().Select(selector: c => (byte) c).ToArray();
+        var unencryptedBytes = secureValueString.ToCharArray().Select(selector: c => (byte)c).ToArray();
         var length = unencryptedBytes.Length;
         var crc32 = DataManipulation.ComputeHashedCrc32(
             dataLength: length,
@@ -97,7 +97,7 @@ public sealed record EncryptedSecureStringSetting : EncryptedObjectSetting
 
         var secureString = new SecureString();
         foreach (var c in decryptedBytes)
-            secureString.AppendChar(c: (char) c);
+            secureString.AppendChar(c: (char)c);
         secureString.MakeReadOnly();
         return secureString;
     } // end of Decrypt

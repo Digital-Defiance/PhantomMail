@@ -1,4 +1,3 @@
-using System.Runtime.InteropServices;
 using MailKit;
 using MailKit.Net.Imap;
 using MailKit.Net.Pop3;
@@ -6,6 +5,7 @@ using MailKit.Net.Smtp;
 using PhantomKit.Enumerations;
 using PhantomKit.Exceptions;
 using PhantomKit.Models;
+using System.Runtime.InteropServices;
 
 // ReSharper disable MemberCanBePrivate.Global
 

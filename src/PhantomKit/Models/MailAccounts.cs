@@ -30,7 +30,7 @@ public record MailAccounts : IEnumerable<EncryptedMailAccount>
     /// <param name="context"></param>
     public MailAccounts(SerializationInfo info, StreamingContext context)
     {
-        this.Accounts = (IEnumerable<EncryptedMailAccount>) info.GetValue(name: "Accounts",
+        this.Accounts = (IEnumerable<EncryptedMailAccount>)info.GetValue(name: "Accounts",
             type: typeof(IEnumerable<EncryptedMailAccount>))!;
     }
 
